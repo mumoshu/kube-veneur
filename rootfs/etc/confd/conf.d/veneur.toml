@@ -1,0 +1,13 @@
+[template]
+src = "veneur.yaml.tmpl"
+dest = "/veneur/veneur.yaml"
+keys = [
+    "/veneur/api/hostname",
+    "/veneur/debug",
+    "/veneur/key",
+    "/veneur/enable/profiling",
+    "/veneur/tag/namespace",
+    "/veneur/forward/address",
+    "/veneur/statsd/address",
+    "/veneur/hostname",
+]

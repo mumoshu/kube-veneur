@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: veneur
+  namespace: kube-system
+spec:
+  ports:
+    - port: 8127
+      targetPort: 8127
+  selector:
+    app: veneur
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: veneur
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      labels:
+        app: veneur
+    spec:
+      dnsPolicy: Default
+      containers:
+      - name: veneur
+        imagePullPolicy: Always
+        image: mumoshu/kube-veneur
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+        # Any change here should be accompanied by a proportional change in CPU
+        # requests of other per-node add-ons (e.g. kube-proxy).
+            cpu: 80m
+            memory: 200Mi
+        env:
+        - name: VENEUR_FORWARD_ADDRESS
+          value:
+        - name: VENEUR_KEY
+          valueFrom:
+            secretKeyRef:
+              name: veneur
+              key: key
+        - name: PORT
+          value: "8125"
+        - name: SELECTOR
+          value: "app=dd-agent"
+        - name: PROTOCOL
+          value: udp
+        - name: NAMESPACE
+          value: kube-system
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      terminationGracePeriodSeconds: 30

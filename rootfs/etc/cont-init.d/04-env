@@ -1,0 +1,59 @@
+#!/usr/bin/with-contenv sh
+
+#!/bin/sh
+set -vxe
+
+export
+
+if [ "${SELECTOR}" = "" ]; then
+  echo Environment variable \$SELECTOR is not set. 1>&2
+  exit 1
+fi
+
+if [ "${NAMESPACE}" = "" ]; then
+  echo Environment variable \$NAMESPACE is not set. 1>&2
+  exit 1
+fi
+
+if [ "${PORT}" = "" -a "${SOURCE_PORT}" == "" ]; then
+  echo Both \$PORT and \$SOURCE_PORT are not set. 1>&2
+  exit 1
+fi
+
+if [ "${PORT}" = "" -a "${TARGET_PORT}" == "" ]; then
+  echo Both \$PORT and \$TARGET_PORT are not set. 1>&2
+  exit 1
+fi
+
+if [ "${PROTOCOL}" = "" ]; then
+  echo Environment variable \$PROTOCOL is not set. 1>&2
+  exit 1
+fi
+
+if [ "${PROTOCOL}" != "udp" ]; then
+  echo Unsupported protocol: ${PROTOCOL} 1>&2
+  exit 1
+fi
+
+if [ "${LOG_LEVEL}" = "" ]; then
+  LOG_LEVEL=warn
+fi
+
+selector="${SELECTOR}"
+namespace="${NAMESPACE}"
+node_name=$(kubectl get po ${MY_POD_NAME} --namespace ${MY_POD_NAMESPACE} --output jsonpath="{.spec.nodeName}")
+pod_ip=$(kubectl get po --selector ${selector} --namespace ${namespace} --output json | jq -r ".items[] | select(.spec.nodeName == \"${node_name}\") | .status.podIP")
+
+pod_count=$(echo "${pod_ip}" | wc -l)
+
+if [ ${pod_count} -ne 1 ]; then
+  echo Failed to determine which pod to connect. There are ${pod_count} candidates: ${pod_ip} 1>&2
+  exit 1
+fi
+
+SOURCE_PORT=${SOURCE_PORT:-$PORT}
+TARGET_PORT=${TARGET_PORT:-$PORT}
+TARGET_IP=${pod_ip}
+
+# see https://github.com/just-containers/s6-overlay/issues/46#issuecomment-97708601
+printf "${TARGET_IP}:8125" > /var/run/s6/container_environment/VENEUR_STATSD_ADDRESS

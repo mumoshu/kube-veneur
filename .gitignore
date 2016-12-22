@@ -1,0 +1,9 @@
+.envrc
+*.secret.yaml
+test-results/
+s6-overlay*
+kubectl/
+bin/
+go/confd
+go/veneur
+go/src/github.com/mumoshu/kube-veneur/example/example

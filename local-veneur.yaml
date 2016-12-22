@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp
+  labels:
+    app: web
+spec:
+  containers:
+    - name: myapp
+      image: gcr.io/google_containers/ubuntu-slim:0.4
+      command:
+      - sleep
+      args:
+      - "9999"
+    - name: example
+      image: mumoshu/kube-veneur-example:latest
+      command:
+      - /example
+    - name: veneur
+      imagePullPolicy: Always
+      image: mumoshu/kube-veneur
+      resources:
+        limits:
+          memory: 200Mi
+        requests:
+      # Any change here should be accompanied by a proportional change in CPU
+      # requests of other per-node add-ons (e.g. kube-proxy).
+          cpu: 80m
+          memory: 200Mi
+      env:
+      - name: VENEUR_FORWARD_ADDRESS
+        value: http://veneue:8127
+      - name: VENEUR_KEY
+        valueFrom:
+          secretKeyRef:
+            name: veneur
+            key: key
+      - name: VENEUR_DEBUG
+        value: "true"
+      - name: VENEUR_TAG_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: PORT
+        value: "8125"
+      - name: SELECTOR
+        value: "app=dd-agent"
+      - name: PROTOCOL
+        value: udp
+       # The namespace dd-agent pods are scheduled in
+      - name: NAMESPACE
+        value: kube-system
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
